@@ -32,7 +32,7 @@ async function signIn(page) {
 }
 
 async function accessPortal() {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.setViewport({ width: 1080, height: 1024 });
   await page.goto('https://www1.ufrgs.br/sistemas/portal/', { waitUntil: 'networkidle0' });
@@ -78,7 +78,7 @@ async function getCadeiras(page, id) {
   });
 
   if (pElementContent.includes('Não há nenhuma turma programada')) {
-    return null;
+    return [];
   }
 
   return page.evaluate(() => {
@@ -101,14 +101,14 @@ async function getCadeiras(page, id) {
         vagas_calouros: parseInt(tds[4].textContent.trim(), 10),
         horarios:
           horarios[0] === 'Horário não definido.'
-            ? null
+            ? []
             : horarios.map((item) => {
                 const [dia, horario] = item.split(' ');
                 return { dia, horario };
               }),
         professores:
           professores[0] === 'Professor não definido.'
-            ? null
+            ? []
             : professores.map((item) => {
                 const parts = item.split('-');
                 return {
