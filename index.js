@@ -6,6 +6,7 @@ const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 async function connectDB() {
+  console.log(uri);
   await client.connect(uri);
   const db = await client.db('db');
   await db.command({ ping: 1 });
@@ -61,11 +62,11 @@ async function getCadeiras(page, id) {
   await page.waitForSelector('#selecionado');
   await page.select('#selecionado', id);
   await page.waitForSelector('select[name="PL"]');
+
   const firstOptionValue = await page.evaluate(() => {
     const options = document.querySelectorAll('select[name="PL"] option');
     return options.length > 0 ? options[0].value : null;
   });
-
   if (firstOptionValue) {
     await page.select('select[name="PL"]', firstOptionValue);
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
@@ -125,7 +126,7 @@ async function getCadeiras(page, id) {
           cadeiras.push(cadeira);
         }
         cadeira = {
-          name: cadeiraName,
+          nome: cadeiraName,
           creditos: parseInt(tds[1].textContent.trim(), 10),
           turmas: [turma],
         };
