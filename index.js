@@ -6,7 +6,6 @@ const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 async function connectDB() {
-  console.log(uri);
   await client.connect(uri);
   const db = await client.db('db');
   await db.command({ ping: 1 });
@@ -48,39 +47,29 @@ async function getCursos(page) {
   let cursos = [];
   const selectElement = await page.$('#selecionado');
   cursos = await selectElement.$$eval('option', (options) =>
-    options.slice(1).map((option) => ({ _id: option.value, nome: option.textContent.trim() }))
+    options.slice(1).map((option) => ({ value: option.value, nome: option.textContent.trim() }))
   );
 
   return cursos;
 }
 
 async function getCadeiras(page, id) {
+  // open curso selection if not visible
   try {
     await page.click('text=[alterar]');
   } catch (error) {}
 
+  // select curso
   await page.waitForSelector('#selecionado');
   await page.select('#selecionado', id);
+
+  // select latest semester
   await page.waitForSelector('select[name="PL"]');
+  const firstOptionValue = await page.$eval('select[name="PL"] option', (option) => option.value);
+  await page.select('select[name="PL"]', firstOptionValue);
+  await page.waitForNavigation();
 
-  const firstOptionValue = await page.evaluate(() => {
-    const options = document.querySelectorAll('select[name="PL"] option');
-    return options.length > 0 ? options[0].value : null;
-  });
-  if (firstOptionValue) {
-    await page.select('select[name="PL"]', firstOptionValue);
-    await page.waitForNavigation({ waitUntil: 'networkidle0' });
-  }
-
-  const pElementContent = await page.evaluate(() => {
-    const pElement = document.querySelector('p');
-    return pElement ? pElement.textContent : '';
-  });
-
-  if (pElementContent.includes('Não há nenhuma turma programada')) {
-    return [];
-  }
-
+  // get cadeiras information from table
   return page.evaluate(() => {
     const table = document.querySelector('#Horarios tbody');
     if (!table) return [];
@@ -146,36 +135,31 @@ async function getCadeiras(page, id) {
 async function main() {
   const { browser, page } = await accessPortal();
 
-  try {
-    const db = await connectDB();
-    await db.dropDatabase();
+  const db = await connectDB();
 
-    const cursos = await getCursos(page);
-    const cursosLength = cursos.length;
-    await db.collection('cursos').insertMany(cursos);
-    console.log('✓ Cursos obtidos');
+  const cursos = await getCursos(page);
+  const cursosLength = cursos.length;
+  console.log('✓ Cursos obtidos');
 
-    let counter = 0;
-    for (const curso of cursos) {
-      const cadeiras = await getCadeiras(page, curso._id);
-      const object = { _id: curso._id, cadeiras };
-      await db.collection('cadeiras').insertOne(object);
-      console.log(`✓ ${curso.nome} (${++counter}/${cursosLength})`);
+  const cadeiras = [];
+  for (const [index, curso] of cursos.entries()) {
+    const cursoCadeiras = await getCadeiras(page, curso.value);
+    if (cursoCadeiras.length > 0) {
+      cadeiras.push({ curso_value: curso.value, cadeiras: cursoCadeiras });
     }
-    console.log('✓ Todas cadeiras inseridas');
-  } catch (error) {
-    console.error(error);
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
-
-    await client.close();
-    console.log('✓ Navegador e banco de dados encerrados');
+    console.log(`✓ ${curso.nome} (${index + 1}/${cursosLength})`);
   }
+
+  const cursosFiltered = cursos.filter((curso) => cadeiras.some((cadeira) => cadeira.curso_value === curso.value));
+
+  await db.dropDatabase();
+  await db.collection('cursos').insertMany(cursosFiltered);
+  await db.collection('cadeiras').insertMany(cadeiras);
+  console.log('✓ Todas os cursos e cadeiras inseridas');
+
+  await browser.close();
+  await client.close();
+  console.log('✓ Navegador e banco de dados encerrados');
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main().catch((error) => {});
