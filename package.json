@@ -1,20 +1,32 @@
 {
-  "name": "scheduler-api",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "dotenv": "^16.4.5",
-    "mongodb": "^6.3.0",
-    "puppeteer": "^22.12.1",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
-  }
+	"name": "scheduler-api",
+	"description": "A scheduling system for courses and classes at UFRGS.",
+	"author": "brunosag",
+	"version": "1.0.0",
+	"license": "ISC",
+	"keywords": [],
+	"main": "src/index.ts",
+	"scripts": {
+		"start": "ts-node src/index.ts"
+	},
+	"lint-staged": {
+		"*.js": "eslint --cache --fix",
+		"*.{js,css,md}": "prettier --write"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.9.1",
+		"@tsconfig/node22": "^22.0.0",
+		"@types/eslint__js": "^8.42.3",
+		"@types/node": "^22.5.2",
+		"@typescript-eslint/eslint-plugin": "^8.4.0",
+		"@typescript-eslint/parser": "^8.4.0",
+		"eslint": "^9.9.1",
+		"eslint-config-prettier": "^9.1.0",
+		"husky": "^9.1.5",
+		"lint-staged": "^15.2.10",
+		"prettier": "3.3.3",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.5.4",
+		"typescript-eslint": "^8.4.0"
+	}
 }
