@@ -1,11 +1,12 @@
-import eslint from "@eslint/js";
-import prettierConfig from "eslint-config-prettier";
-import tseslint from "typescript-eslint";
+import eslint from '@eslint/js';
+import prettierConfig from 'eslint-config-prettier';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
 	eslint.configs.recommended,
 	...tseslint.configs.strictTypeChecked,
 	...tseslint.configs.stylisticTypeChecked,
+	prettierConfig,
 	{
 		languageOptions: {
 			parserOptions: {
@@ -13,10 +14,12 @@ export default tseslint.config(
 				tsconfigRootDir: import.meta.dirname,
 			},
 		},
+		rules: {
+			'@typescript-eslint/no-unused-vars': 'off',
+		},
 	},
 	{
-		files: ["**/*.mjs"],
+		files: ['**/*.mjs'],
 		extends: [tseslint.configs.disableTypeChecked],
 	},
-	prettierConfig,
 );
