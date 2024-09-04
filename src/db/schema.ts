@@ -5,65 +5,76 @@ import {
 	text,
 } from 'drizzle-orm/sqlite-core';
 
-export const programs = sqliteTable('programs', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	code: text('code').notNull(),
-});
-
-export const courses = sqliteTable('courses', {
+export const programsTable = sqliteTable('programs', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	code: text('code').notNull().unique(),
 	name: text('name').notNull(),
 });
 
-export const classes = sqliteTable('classes', {
+export const coursesTable = sqliteTable('courses', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	code: text('code').notNull().unique(),
+	name: text('name').notNull(),
+});
+
+export const classesTable = sqliteTable('classes', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull(),
 	freshmanSpots: integer('freshman_spots').notNull(),
 	seniorSpots: integer('senior_spots').notNull(),
-	courseId: integer('course_id').references(() => courses.id),
+	courseId: integer('course_id').references(() => coursesTable.id),
 });
 
-export const timeBlocks = sqliteTable('time_blocks', {
+export const timeBlocksTable = sqliteTable('time_blocks', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	day: text('day').notNull(),
 	time: text('time').notNull(),
 });
 
-export const professors = sqliteTable('professors', {
+export const professorsTable = sqliteTable('professors', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull().unique(),
 });
 
-export const programsCourses = sqliteTable(
+export const programsCoursesTable = sqliteTable(
 	'programs_courses',
 	{
-		programId: integer('program_id').references(() => programs.id),
-		courseId: integer('course_id').references(() => courses.id),
+		programId: integer('program_id')
+			.notNull()
+			.references(() => programsTable.id),
+		courseId: integer('course_id')
+			.notNull()
+			.references(() => coursesTable.id),
 	},
-	(table) => {
-		return {
-			pk: primaryKey({ columns: [table.programId, table.courseId] }),
-		};
-	},
+	(table) => ({
+		pk: primaryKey({ columns: [table.programId, table.courseId] }),
+	}),
 );
 
-export const classTimeBlocks = sqliteTable(
+export const classTimeBlocksTable = sqliteTable(
 	'class_time_blocks',
 	{
-		classId: integer('class_id').references(() => classes.id),
-		timeBlockId: integer('time_block_id').references(() => timeBlocks.id),
+		classId: integer('class_id')
+			.notNull()
+			.references(() => classesTable.id),
+		timeBlockId: integer('time_block_id')
+			.notNull()
+			.references(() => timeBlocksTable.id),
 	},
-	(table) => {
-		return {
-			pk: primaryKey({ columns: [table.classId, table.timeBlockId] }),
-		};
-	},
+	(table) => ({
+		pk: primaryKey({ columns: [table.classId, table.timeBlockId] }),
+	}),
 );
 
-export const classProfessors = sqliteTable(
+export const classProfessorsTable = sqliteTable(
 	'class_professors',
 	{
+		classId: integer('class_id')
+			.notNull()
+			.references(() => classesTable.id),
+		professorId: integer('professor_id')
+			.notNull()
+			.references(() => professorsTable.id),
 		isCoordinator: integer('is_coordinator', { mode: 'boolean' })
 			.notNull()
 			.default(false),
@@ -71,12 +82,26 @@ export const classProfessors = sqliteTable(
 			.notNull()
 			.default(true),
 		isGrader: integer('is_grader', { mode: 'boolean' }).notNull().default(true),
-		classId: integer('class_id').references(() => classes.id),
-		professorId: integer('professor_id').references(() => professors.id),
 	},
-	(table) => {
-		return {
-			pk: primaryKey({ columns: [table.classId, table.professorId] }),
-		};
-	},
+	(table) => ({
+		pk: primaryKey({ columns: [table.classId, table.professorId] }),
+	}),
 );
+
+export type InsertProgram = typeof programsTable.$inferInsert;
+export type InsertCourse = typeof coursesTable.$inferInsert;
+export type InsertClass = typeof classesTable.$inferInsert;
+export type InsertTimeBlock = typeof timeBlocksTable.$inferInsert;
+export type InsertProfessor = typeof professorsTable.$inferInsert;
+export type InsertProgramCourse = typeof programsCoursesTable.$inferInsert;
+export type InsertClassTimeBlock = typeof classTimeBlocksTable.$inferInsert;
+export type InsertClassProfessor = typeof classProfessorsTable.$inferInsert;
+
+export type SelectProgram = typeof programsTable.$inferSelect;
+export type SelectCourse = typeof coursesTable.$inferSelect;
+export type SelectClass = typeof classesTable.$inferSelect;
+export type SelectTimeBlock = typeof timeBlocksTable.$inferSelect;
+export type SelectProfessor = typeof professorsTable.$inferSelect;
+export type SelectProgramCourse = typeof programsCoursesTable.$inferSelect;
+export type SelectClassTimeBlock = typeof classTimeBlocksTable.$inferSelect;
+export type SelectClassProfessor = typeof classProfessorsTable.$inferSelect;
