@@ -3,33 +3,44 @@ import {
 	primaryKey,
 	sqliteTable,
 	text,
+	unique,
 } from 'drizzle-orm/sqlite-core';
 
 export const programsTable = sqliteTable('programs', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
+	id: integer('id').notNull().unique(),
 	code: text('code').notNull().unique(),
 	name: text('name').notNull(),
 });
 
 export const coursesTable = sqliteTable('courses', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
+	id: integer('id').notNull().unique(),
 	code: text('code').notNull().unique(),
 	name: text('name').notNull(),
+	programId: integer('program_id')
+		.notNull()
+		.references(() => programsTable.id),
 });
 
 export const classesTable = sqliteTable('classes', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull(),
-	freshmanSpots: integer('freshman_spots').notNull(),
-	seniorSpots: integer('senior_spots').notNull(),
-	courseId: integer('course_id').references(() => coursesTable.id),
+	spots: integer('spots').notNull(),
+	courseId: integer('course_id')
+		.notNull()
+		.references(() => coursesTable.id),
 });
 
-export const timeBlocksTable = sqliteTable('time_blocks', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	day: text('day').notNull(),
-	time: text('time').notNull(),
-});
+export const timeBlocksTable = sqliteTable(
+	'time_blocks',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		day: text('day').notNull(),
+		time: text('time').notNull(),
+	},
+	(table) => ({
+		unq: unique().on(table.day, table.time),
+	}),
+);
 
 export const professorsTable = sqliteTable('professors', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -75,13 +86,9 @@ export const classProfessorsTable = sqliteTable(
 		professorId: integer('professor_id')
 			.notNull()
 			.references(() => professorsTable.id),
-		isCoordinator: integer('is_coordinator', { mode: 'boolean' })
-			.notNull()
-			.default(false),
-		isInstructor: integer('is_instructor', { mode: 'boolean' })
-			.notNull()
-			.default(true),
-		isGrader: integer('is_grader', { mode: 'boolean' }).notNull().default(true),
+		isCoordinator: integer('is_coordinator', { mode: 'boolean' }).notNull(),
+		isInstructor: integer('is_instructor', { mode: 'boolean' }).notNull(),
+		isGrader: integer('is_grader', { mode: 'boolean' }).notNull(),
 	},
 	(table) => ({
 		pk: primaryKey({ columns: [table.classId, table.professorId] }),

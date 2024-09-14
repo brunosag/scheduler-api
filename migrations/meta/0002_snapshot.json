@@ -1,0 +1,373 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "cf9882a3-e0af-4021-a63d-1ba4422bb1e0",
+	"prevId": "6f6e9d33-a014-45f7-9809-17f20c6d0ede",
+	"tables": {
+		"class_professors": {
+			"name": "class_professors",
+			"columns": {
+				"class_id": {
+					"name": "class_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"professor_id": {
+					"name": "professor_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"is_coordinator": {
+					"name": "is_coordinator",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_instructor": {
+					"name": "is_instructor",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": true
+				},
+				"is_grader": {
+					"name": "is_grader",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": true
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"class_professors_class_id_classes_id_fk": {
+					"name": "class_professors_class_id_classes_id_fk",
+					"tableFrom": "class_professors",
+					"tableTo": "classes",
+					"columnsFrom": ["class_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"class_professors_professor_id_professors_id_fk": {
+					"name": "class_professors_professor_id_professors_id_fk",
+					"tableFrom": "class_professors",
+					"tableTo": "professors",
+					"columnsFrom": ["professor_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"class_professors_class_id_professor_id_pk": {
+					"columns": ["class_id", "professor_id"],
+					"name": "class_professors_class_id_professor_id_pk"
+				}
+			},
+			"uniqueConstraints": {}
+		},
+		"class_time_blocks": {
+			"name": "class_time_blocks",
+			"columns": {
+				"class_id": {
+					"name": "class_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"time_block_id": {
+					"name": "time_block_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"class_time_blocks_class_id_classes_id_fk": {
+					"name": "class_time_blocks_class_id_classes_id_fk",
+					"tableFrom": "class_time_blocks",
+					"tableTo": "classes",
+					"columnsFrom": ["class_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"class_time_blocks_time_block_id_time_blocks_id_fk": {
+					"name": "class_time_blocks_time_block_id_time_blocks_id_fk",
+					"tableFrom": "class_time_blocks",
+					"tableTo": "time_blocks",
+					"columnsFrom": ["time_block_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"class_time_blocks_class_id_time_block_id_pk": {
+					"columns": ["class_id", "time_block_id"],
+					"name": "class_time_blocks_class_id_time_block_id_pk"
+				}
+			},
+			"uniqueConstraints": {}
+		},
+		"classes": {
+			"name": "classes",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"freshman_spots": {
+					"name": "freshman_spots",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"senior_spots": {
+					"name": "senior_spots",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"course_id": {
+					"name": "course_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"classes_course_id_courses_id_fk": {
+					"name": "classes_course_id_courses_id_fk",
+					"tableFrom": "classes",
+					"tableTo": "courses",
+					"columnsFrom": ["course_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {}
+		},
+		"courses": {
+			"name": "courses",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"code": {
+					"name": "code",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"courses_code_unique": {
+					"name": "courses_code_unique",
+					"columns": ["code"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {}
+		},
+		"professors": {
+			"name": "professors",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"professors_name_unique": {
+					"name": "professors_name_unique",
+					"columns": ["name"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {}
+		},
+		"programs_courses": {
+			"name": "programs_courses",
+			"columns": {
+				"program_id": {
+					"name": "program_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"course_id": {
+					"name": "course_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"programs_courses_program_id_programs_id_fk": {
+					"name": "programs_courses_program_id_programs_id_fk",
+					"tableFrom": "programs_courses",
+					"tableTo": "programs",
+					"columnsFrom": ["program_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"programs_courses_course_id_courses_id_fk": {
+					"name": "programs_courses_course_id_courses_id_fk",
+					"tableFrom": "programs_courses",
+					"tableTo": "courses",
+					"columnsFrom": ["course_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"programs_courses_program_id_course_id_pk": {
+					"columns": ["program_id", "course_id"],
+					"name": "programs_courses_program_id_course_id_pk"
+				}
+			},
+			"uniqueConstraints": {}
+		},
+		"programs": {
+			"name": "programs",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"code": {
+					"name": "code",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"programs_code_unique": {
+					"name": "programs_code_unique",
+					"columns": ["code"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {}
+		},
+		"time_blocks": {
+			"name": "time_blocks",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"day": {
+					"name": "day",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"time": {
+					"name": "time",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"time_blocks_day_time_unique": {
+					"name": "time_blocks_day_time_unique",
+					"columns": ["day", "time"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {}
+		}
+	},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}
