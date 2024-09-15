@@ -1,16 +1,7 @@
 import { Page } from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import {
-	InsertClass,
-	InsertClassProfessor,
-	InsertClassTimeBlock,
-	InsertCourse,
-	InsertProfessor,
-	InsertProgram,
-	InsertProgramCourse,
-	InsertTimeBlock,
-} from './db/schema';
+import { InsertClass, InsertCourse, InsertProgram } from './db/schema';
 import { errorAndExit, getEnv } from './utils';
 
 const PORTAL_URL =
@@ -21,13 +12,6 @@ const PORTAL_CLASSES_URL =
 	'https://www1.ufrgs.br/intranet/portal/public/index.php?cods=1,1,1,224';
 const ENROLLMENT_PORTAL_CLASSES_URL =
 	'https://www1.ufrgs.br/especial/index.php?cods=1,1,2,7';
-
-const classes: InsertClass[] = [];
-const timeBlocks: InsertTimeBlock[] = [];
-const professors: InsertProfessor[] = [];
-const programCourses: InsertProgramCourse[] = [];
-const classTimeBlocks: InsertClassTimeBlock[] = [];
-const classProfessors: InsertClassProfessor[] = [];
 
 async function login(page: Page) {
 	await page.type('#usuario', getEnv('PORTAL_USER'));
@@ -55,37 +39,74 @@ puppeteer
 		if (!programSelectEl) {
 			errorAndExit('Program select element not found.');
 		}
-		const programs: InsertProgram[] = await programSelectEl.$$eval(
-			'option',
-			(options) =>
-				options.slice(1).map(({ value, text }, index) => ({
-					id: index,
-					code: value,
-					name: text,
-				})),
+		const programOptions = await programSelectEl.$$eval('option', (options) =>
+			options.slice(1).map(({ value }) => value),
 		);
-		if (programs.length === 0) {
-			errorAndExit('No programs found.');
-		}
+		const programs: InsertProgram[] = [];
 		const courses: InsertCourse[] = [];
-		for (const { id, code } of programs) {
+		const classes: InsertClass[] = [];
+		for (const option of programOptions) {
 			const changeCourseBtn = await page.$('text=[alterar]');
 			await changeCourseBtn?.click();
 			await page.waitForSelector('#selecionado');
-			await page.select('#selecionado', code);
+			await page.select('#selecionado', option);
 			await page.waitForNetworkIdle();
 			const tableEl = await page.$('#Horarios');
-			if (!tableEl) continue;
-			const rows = (await tableEl.$$('tr')).slice(1);
-			for (const row of rows) {
-				const cells = await row.$$('td');
-				const nameString = await cells[0].evaluate((cell) =>
-					cell.innerText.trim(),
-				);
-				const code = nameString.slice(1, nameString.indexOf(')'));
-				const name = nameString.slice(nameString.indexOf(' ') + 1);
-				if (!courses.some((course) => course.code === code)) {
-					courses.push({ id: courses.length, code, name, programId: id });
+			if (tableEl) {
+				const programId = programs.length;
+				const name = await page.$eval('#principal b', (el) => el.innerText);
+				programs.push({ id: programId, name });
+				const rows = (await tableEl.$$('tr')).slice(1);
+				for (const row of rows) {
+					const cells = await row.$$('td');
+					const nameString = await cells[0].evaluate((cell) =>
+						cell.innerText.trim(),
+					);
+					if (nameString !== '') {
+						const courseId = courses.length;
+						const code = nameString.slice(1, nameString.indexOf(')'));
+						const name = nameString.slice(nameString.indexOf(' ') + 1);
+						const credits = await cells[1].evaluate((cell) =>
+							parseInt(cell.innerText),
+						);
+						const teachingPlan = await cells[10].$eval('a', (el) => el.href);
+						courses.push({
+							id: courseId,
+							code,
+							name,
+							credits,
+							teachingPlan,
+							programId,
+						});
+					}
+					const classId = classes.length;
+					const name = await cells[2].evaluate((cell) => cell.innerText);
+					const seniorSpots = await cells[3].evaluate((cell) =>
+						parseInt(cell.innerText),
+					);
+					const juniorSpots = await cells[4].evaluate((cell) =>
+						parseInt(cell.innerText),
+					);
+					const expandedSpots = await cells[5].evaluate((cell) =>
+						parseInt(cell.innerText),
+					);
+					const seniorFilledSpots = await cells[6].evaluate((cell) =>
+						parseInt(cell.innerText),
+					);
+					const juniorFilledSpots = await cells[7].evaluate((cell) =>
+						parseInt(cell.innerText),
+					);
+					const courseId = courses.length - 1;
+					classes.push({
+						id: classId,
+						name,
+						seniorSpots,
+						juniorSpots,
+						expandedSpots,
+						seniorFilledSpots,
+						juniorFilledSpots,
+						courseId,
+					});
 				}
 			}
 		}
