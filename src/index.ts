@@ -1,7 +1,12 @@
 import { Page } from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { InsertClass, InsertCourse, InsertProgram } from './db/schema';
+import {
+	InsertClass,
+	InsertCourse,
+	InsertProgram,
+	InsertTimeLocation,
+} from './db/schema';
 import { errorAndExit, getEnv } from './utils';
 
 const PORTAL_URL =
@@ -45,6 +50,7 @@ puppeteer
 		const programs: InsertProgram[] = [];
 		const courses: InsertCourse[] = [];
 		const classes: InsertClass[] = [];
+		const timeLocations: InsertTimeLocation[] = [];
 		for (const option of programOptions) {
 			const changeCourseBtn = await page.$('text=[alterar]');
 			await changeCourseBtn?.click();
@@ -107,6 +113,15 @@ puppeteer
 						juniorFilledSpots,
 						courseId,
 					});
+					const timeLocationEl = await cells[8].$('ul');
+					console.log(await timeLocationEl?.evaluate((el) => el.childNodes));
+					const dayCount = timeLocationEls.length / 2;
+					for (let i = 0; i < dayCount; i++) {
+						const timeLocationId = timeLocations.length;
+						console.log(timeLocationEls[i].textContent);
+						const day = timeLocationEls[i].textContent?.split(' ')[0];
+						console.log(day);
+					}
 				}
 			}
 		}

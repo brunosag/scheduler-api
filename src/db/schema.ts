@@ -40,7 +40,7 @@ export const timeLocationTable = sqliteTable('time_location', {
 	startTime: integer('start_time').notNull(),
 	endTime: integer('end_time').notNull(),
 	locationName: text('location_name').notNull(),
-	locationUrl: text('location_url').notNull(),
+	locationUrl: text('location_url'),
 	classId: integer('class_id')
 		.notNull()
 		.references(() => classesTable.id),
