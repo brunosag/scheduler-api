@@ -2,14 +2,19 @@ import json
 import os
 import re
 
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import ElementHandle, Page, sync_playwright
 
+# Environment variables for credentials
 MOODLE_USERNAME = os.environ.get("MOODLE_USERNAME")
 MOODLE_PASSWORD = os.environ.get("MOODLE_PASSWORD")
+
+# URLs
 LOGIN_URL = "https://www1.ufrgs.br/sistemas/portal/?Destino=ccd7f388f9a3e25ef6aff3b98c773f65"
-TABLES_URL = (
+COURSES_URL = (
     "https://www1.ufrgs.br/intranet/portal/public/index.php?cods=1,1,1,224"
 )
+
+# Day Mapping
 DAY_MAP = {
     "Segunda": 0,
     "Terça": 1,
@@ -21,6 +26,7 @@ DAY_MAP = {
 
 
 def login(page: Page, username: str, password: str):
+    """Logs into the Moodle platform."""
     page.wait_for_selector("form#pessoal")
     page.fill("input#usuario", username)
     page.fill("input#senha", password)
@@ -29,94 +35,101 @@ def login(page: Page, username: str, password: str):
 
 
 def select_program(page: Page, program_id: str):
+    """Selects a specific program from the dropdown."""
     page.wait_for_selector("select#selecionado")
     page.select_option("select#selecionado", value=program_id)
     page.wait_for_load_state("networkidle")
 
 
-def parse_table(page: Page) -> list[dict[str, str]]:
+def extract_schedule_data(schedule_string: str) -> dict:
+    """Extracts day and time information from a schedule string."""
+    match = re.match(
+        r"(?P<day>.*?)\s*(?P<s_hh>\d+):(?P<s_mm>\d+)-(?P<e_hh>\d+):(?P<e_mm>\d+)",
+        schedule_string,
+    )
+    if not match:
+        return {}
+
+    start_time = int(match.group("s_hh")) * 60 + int(match.group("s_mm"))
+    end_time = int(match.group("e_hh")) * 60 + int(match.group("e_mm"))
+
+    return {
+        "day": DAY_MAP.get(match.group("day"), -1),
+        "time": {"start": start_time, "end": end_time},
+    }
+
+
+def parse_schedule(schedule_cell: ElementHandle) -> list[dict]:
+    """Parses course schedule information."""
+    schedule_strings = [
+        li.text_content().strip()
+        for li in schedule_cell.query_selector_all("li.hor")
+    ]
+    locations = [
+        {
+            "text": a.text_content().strip(),
+            "link": a.get_attribute("href"),
+        }
+        for a in schedule_cell.query_selector_all("a.clicavel")
+    ]
+
+    schedule = [
+        {
+            **extract_schedule_data(schedule_str),
+            "location": locations[i] if i < len(locations) else None,
+        }
+        for i, schedule_str in enumerate(schedule_strings)
+    ]
+    return schedule
+
+
+def parse_professors(professors_cell: ElementHandle) -> list[str]:
+    """Parses professor names."""
+    professor_strings = [
+        li.text_content().strip()
+        for li in professors_cell.query_selector_all("li.hor")
+    ]
+    professors = []
+    for professor_string in professor_strings:
+        match = re.match(r"(?P<name>.*?) - Ministrante", professor_string)
+        if match:
+            professors.append(match.group("name").upper())
+    return professors
+
+
+def parse_courses(page: Page) -> list[dict]:
+    """Parses the program's courses table."""
     page.wait_for_selector("table#Horarios")
-    rows = page.query_selector_all("table#Horarios tbody tr")
+    rows = page.query_selector_all("table#Horarios tbody tr")[1:]
 
     courses = []
     current_course = None
+
     for row in rows:
         cells = row.query_selector_all("td")
-        if cells:
-            title = cells[0].text_content().strip()
-            if title:
-                if current_course:
-                    courses.append(current_course)
+        title = cells[0].text_content().strip()
 
-                match = re.match(r"\((?P<code>.*?)\)\s*(?P<name>.*)", title)
+        if title:
+            if current_course:
+                courses.append(current_course)
 
-                code = match.group("code")
-                name = match.group("name")
-                credits = int(cells[1].text_content().strip())
-
-                current_course = dict(
-                    code=code,
-                    name=name,
-                    credits=credits,
-                    classes=[],
-                )
-
-            code = cells[2].text_content().strip()
-            senior_spots = int(cells[3].text_content().strip())
-            freshman_spots = int(cells[4].text_content().strip())
-
-            schedule_strings = [
-                li.text_content().strip()
-                for li in cells[8].query_selector_all("li.hor")
-            ]
-            locations = [
-                {
-                    "text": a.text_content().strip(),
-                    "link": a.get_attribute("href"),
+            match = re.match(r"\((?P<code>.*?)\)\s*(?P<name>.*)", title)
+            if match:
+                current_course = {
+                    "code": match.group("code"),
+                    "name": match.group("name"),
+                    "credits": int(cells[1].text_content().strip()),
+                    "classes": [],
                 }
-                for a in cells[8].query_selector_all("a.clicavel")
-            ]
 
-            schedule = []
-            for i, schedule_string in enumerate(schedule_strings):
-                match = re.match(
-                    r"(?P<day>.*?)\s*(?P<s_hh>\d+):(?P<s_mm>\d+)-(?P<e_hh>\d+):(?P<e_mm>\d+)",
-                    schedule_string,
-                )
-                schedule_item = dict(
-                    day=DAY_MAP[match.group("day")],
-                    time=dict(
-                        start=int(match.group("s_hh")) * 60
-                        + int(match.group("s_mm")),
-                        end=int(match.group("e_hh")) * 60
-                        + int(match.group("e_mm")),
-                    ),
-                    location=locations[i] if i < len(locations) else None,
-                )
-                schedule.append(schedule_item)
-
-            professor_strings = [
-                li.text_content().strip()
-                for li in cells[9].query_selector_all("li.hor")
-            ]
-
-            professors = []
-            for professor_string in professor_strings:
-                match = re.match(
-                    r"(?P<name>.*?) - Ministrante", professor_string
-                )
-                if match:
-                    name = match.group("name")
-                    professors.append(name.upper())
-
-            current_class = dict(
-                code=code,
-                senior_spots=senior_spots,
-                freshman_spots=freshman_spots,
-                schedule=schedule,
-                professors=professors,
-            )
-            current_course["classes"].append(current_class)
+        class_data = {
+            "code": cells[2].text_content().strip(),
+            "senior_spots": int(cells[3].text_content().strip()),
+            "freshman_spots": int(cells[4].text_content().strip()),
+            "schedule": parse_schedule(cells[8]),
+            "professors": parse_professors(cells[9]),
+        }
+        current_course["classes"].append(class_data)
 
     return courses
 
@@ -129,10 +142,10 @@ def main():
         page.goto(LOGIN_URL)
         login(page, MOODLE_USERNAME, MOODLE_PASSWORD)
 
-        page.goto(TABLES_URL)
+        page.goto(COURSES_URL)
         select_program(page, "38/1")
 
-        courses = parse_table(page)
+        courses = parse_courses(page)
 
         browser.close()
 
