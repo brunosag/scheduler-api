@@ -27,6 +27,9 @@ class Course(Base):
     code = Column(String, nullable=False)
     name = Column(String, nullable=False)
     credits = Column(Integer, nullable=False)
+    semester = Column(Integer)
+    course_type = Column(Integer)
+    required_credits = Column(Integer)
     prerequisites = relationship(
         "Course",
         secondary=course_prerequisite_association,
