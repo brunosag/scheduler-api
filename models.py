@@ -6,80 +6,106 @@ class Base(DeclarativeBase):
     pass
 
 
-course_prerequisite_association = Table(
-    "course_prerequisite",
+course_prerequisites = Table(
+    "_CoursePrerequisites",
     Base.metadata,
-    Column("course_id", ForeignKey("courses.id", ondelete="CASCADE")),
-    Column("prerequisite_id", ForeignKey("courses.id", ondelete="CASCADE")),
+    Column(
+        "A",
+        Integer,
+        ForeignKey("Course.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "B",
+        Integer,
+        ForeignKey("Course.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
-professor_class_association = Table(
-    "professor_class",
+class_professors = Table(
+    "_ClassToProfessor",
     Base.metadata,
-    Column("professor_id", ForeignKey("professors.id", ondelete="CASCADE")),
-    Column("class_id", ForeignKey("classes.id", ondelete="CASCADE")),
+    Column(
+        "A",
+        Integer,
+        ForeignKey("Class.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "B",
+        Integer,
+        ForeignKey("Professor.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
 class Course(Base):
-    __tablename__ = "courses"
+    __tablename__ = "Course"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    code = Column(String, nullable=False)
+    code = Column(String, unique=True, nullable=False)
     name = Column(String, nullable=False)
     credits = Column(Integer, nullable=False)
     semester = Column(Integer)
-    course_type = Column(Integer)
-    required_credits = Column(Integer)
+    courseType = Column(Integer)
+    requiredCredits = Column(Integer)
+
+    classes = relationship("Class", back_populates="course")
     prerequisites = relationship(
         "Course",
-        secondary=course_prerequisite_association,
-        primaryjoin=(id == course_prerequisite_association.c.course_id),
-        secondaryjoin=(
-            id == course_prerequisite_association.c.prerequisite_id
-        ),
-        backref="prerequisite_for",
+        secondary=course_prerequisites,
+        primaryjoin=(id == course_prerequisites.c.B),
+        secondaryjoin=(id == course_prerequisites.c.A),
+        backref="prerequisiteFor",
     )
-    classes = relationship("Class", back_populates="course")
 
 
 class Class(Base):
-    __tablename__ = "classes"
+    __tablename__ = "Class"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    course_id = Column(
-        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+    courseId = Column(
+        Integer, ForeignKey("Course.id", ondelete="CASCADE"), nullable=False
     )
     code = Column(String, nullable=False)
-    senior_spots = Column(Integer, nullable=False)
-    freshman_spots = Column(Integer, nullable=False)
-    schedules = relationship("Schedule", back_populates="class_")
+    seniorSpots = Column(Integer, nullable=False)
+    freshmanSpots = Column(Integer, nullable=False)
+
+    course = relationship("Course", back_populates="classes")
     professors = relationship(
         "Professor",
-        secondary=professor_class_association,
+        secondary="_ClassToProfessor",
         back_populates="classes",
     )
-    course = relationship("Course", back_populates="classes")
-
-
-class Schedule(Base):
-    __tablename__ = "schedules"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    class_id = Column(
-        Integer, ForeignKey("classes.id", ondelete="CASCADE"), nullable=False
-    )
-    day = Column(Integer, nullable=False)
-    start_time = Column(Integer, nullable=False)
-    end_time = Column(Integer, nullable=False)
-    location_text = Column(String)
-    location_link = Column(String)
-    class_ = relationship("Class", back_populates="schedules")
+    schedules = relationship("Schedule", back_populates="_class")
 
 
 class Professor(Base):
-    __tablename__ = "professors"
+    __tablename__ = "Professor"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
+
     classes = relationship(
         "Class",
-        secondary=professor_class_association,
+        secondary="_ClassToProfessor",
         back_populates="professors",
     )
+
+
+class Schedule(Base):
+    __tablename__ = "Schedule"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    classId = Column(
+        Integer, ForeignKey("Class.id", ondelete="CASCADE"), nullable=False
+    )
+    day = Column(Integer, nullable=False)
+    startTime = Column(Integer, nullable=False)
+    endTime = Column(Integer, nullable=False)
+    locationText = Column(String)
+    locationLink = Column(String)
+
+    _class = relationship("Class", back_populates="schedules")

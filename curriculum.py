@@ -68,8 +68,8 @@ def add_curriculum_data(
             continue
 
         course.semester = curriculum_course["semester"]
-        course.required_credits = curriculum_course["required_credits"]
-        course.course_type = curriculum_course["course_type"]
+        course.requiredCredits = curriculum_course["required_credits"]
+        course.courseType = curriculum_course["course_type"]
 
         course.prerequisites.extend(
             prereq

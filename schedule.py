@@ -31,7 +31,7 @@ def select_program(page: Page, program_id: str):
 
 
 def parse_schedules(
-    schedule_cell: ElementHandle, class_: Class
+    schedule_cell: ElementHandle, _class: Class
 ) -> list[Schedule]:
     """Parses course schedule information."""
     schedule_strings = [
@@ -58,13 +58,13 @@ def parse_schedules(
         location = locations[i] if i < len(locations) else None
 
         schedule = Schedule(
-            class_=class_,
+            _class=_class,
             day=DAY_MAP.get(match.group("day")),
-            start_time=int(match.group("s_hh")) * 60
+            startTime=int(match.group("s_hh")) * 60
             + int(match.group("s_mm")),
-            end_time=int(match.group("e_hh")) * 60 + int(match.group("e_mm")),
-            location_text=location["text"] if location else None,
-            location_link=location["link"] if location else None,
+            endTime=int(match.group("e_hh")) * 60 + int(match.group("e_mm")),
+            locationText=location["text"] if location else None,
+            locationLink=location["link"] if location else None,
         )
         schedules.append(schedule)
 
@@ -113,15 +113,15 @@ def parse_schedule_page(page: Page) -> list[Course]:
             )
             courses.append(course)
 
-        class_ = Class(
+        _class = Class(
             course=course,
             code=cells[2].text_content().strip(),
-            senior_spots=int(cells[3].text_content().strip()),
-            freshman_spots=int(cells[4].text_content().strip()),
+            seniorSpots=int(cells[3].text_content().strip()),
+            freshmanSpots=int(cells[4].text_content().strip()),
         )
-        course.classes.append(class_)
+        course.classes.append(_class)
 
-        class_.schedules.extend(parse_schedules(cells[8], class_))
+        _class.schedules.extend(parse_schedules(cells[8], _class))
 
         for name in parse_professors(cells[9]):
             professor = next(
@@ -131,6 +131,6 @@ def parse_schedule_page(page: Page) -> list[Course]:
                 professor = Professor(name=name)
                 professors.append(professor)
 
-            class_.professors.append(professor)
+            _class.professors.append(professor)
 
     return courses

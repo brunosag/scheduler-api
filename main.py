@@ -17,7 +17,7 @@ CURRICULUM_URL = "https://www1.ufrgs.br/PortalEnsino/GraduacaoCurriculos/plone.p
 
 def main():
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
 
         page.goto(LOGIN_URL)
