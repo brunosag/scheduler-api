@@ -1,18 +1,13 @@
-import os
-
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
 from models import Base, Class, Course, Professor, Schedule
 
-TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL")
-TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN")
-
 
 def create_db_engine() -> Engine:
     """Creates and returns a database engine."""
-    dbUrl = f"sqlite+{TURSO_DATABASE_URL}/?authToken={TURSO_AUTH_TOKEN}&secure=true"
-    engine = create_engine(dbUrl, connect_args={"check_same_thread": False})
+    dbUrl = 'sqlite:///ufrgs.db'
+    engine = create_engine(dbUrl, connect_args={'check_same_thread': False})
     return engine
 
 
