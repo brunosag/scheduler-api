@@ -2,7 +2,7 @@ import re
 
 from playwright.sync_api import ElementHandle, Page
 
-from models import Class, Course, Professor, Schedule
+from .models import Class, Course, Professor, Schedule
 
 DAY_MAP = {
     'Segunda': 0,

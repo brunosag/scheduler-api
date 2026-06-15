@@ -1,7 +1,7 @@
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
-from models import Base, Class, Course, Professor, Schedule
+from .models import Base, Class, Course, Professor, Schedule
 
 
 def create_db_engine() -> Engine:
@@ -32,3 +32,20 @@ def reset_database(session: Session):
     session.query(Class).delete()
     session.query(Course).delete()
     session.commit()
+
+
+def get_all_courses(session: Session) -> list[Course]:
+    """Retrieves the complete curriculum, ordered by semester."""
+    return session.query(Course).order_by(Course.semester, Course.name).all()
+
+
+def get_classes_by_filter(
+    session: Session, course_code: str, day: int | None = None
+) -> list[Class]:
+    """Queries class sections filtered by course code and optionally by day of the week."""
+    query = session.query(Class).join(Course).filter(Course.code == course_code)
+
+    if day is not None:
+        query = query.join(Schedule).filter(Schedule.day == day)
+
+    return query.all()
